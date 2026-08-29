@@ -1,0 +1,24 @@
+# Secrets and Environment Variables
+.env
+.env.*
+!.env.example
+application-local.properties
+application-secret.properties
+*.secrets
+*.pem
+*.key
+
+# Build and IDE
+target/
+dist/
+build/
+.dist/
+node_modules/
+.idea/
+*.iml
+.vscode/
+*.log
+
+# OS generated
+.DS_Store
+Thumbs.db
