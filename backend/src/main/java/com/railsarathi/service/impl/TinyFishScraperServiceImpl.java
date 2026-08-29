@@ -34,7 +34,7 @@ public class TinyFishScraperServiceImpl implements TinyFishScraperService {
     private final TrainRepository trainRepository;
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @Value("${tinyfish.api.key:sk-tinyfish-dn0ydvNdZQ7tDUmd4_5sti9tfwM5nxlK}")
+    @Value("${tinyfish.api.key:}")
     private String apiKey;
 
     @Value("${tinyfish.search.url:https://api.search.tinyfish.ai}")
@@ -47,6 +47,11 @@ public class TinyFishScraperServiceImpl implements TinyFishScraperService {
         Optional<Train> trainOpt = trainRepository.findByTrainNumber(cleanTrainNumber);
         String trainName = trainOpt.map(Train::getTrainName).orElse("Train " + cleanTrainNumber);
 
+        if (apiKey == null || apiKey.trim().isBlank() || apiKey.contains("dummy")) {
+            log.info("TinyFish API key not configured or dummy test key used. Using timetable fallback for train {}.", cleanTrainNumber);
+            return buildTimetableFallback(cleanTrainNumber, trainName, trainOpt);
+        }
+
         try {
             log.info("Fetching TinyFish AI live status for train: {} ({}) [forceRefresh={}]", cleanTrainNumber, trainName, forceRefresh);
 
@@ -55,7 +60,7 @@ public class TinyFishScraperServiceImpl implements TinyFishScraperService {
             URI uri = URI.create(searchUrl + "?query=" + encodedQuery);
 
             RestClient restClient = RestClient.builder()
-                    .defaultHeader("X-API-Key", apiKey)
+                    .defaultHeader("X-API-Key", apiKey.trim())
                     .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                     .build();
 
@@ -113,9 +118,12 @@ public class TinyFishScraperServiceImpl implements TinyFishScraperService {
             log.warn("TinyFish AI request failed or timed out: {}. Using timetable fallback.", ex.getMessage());
         }
 
-        // Graceful Fallback to schedule database
+        return buildTimetableFallback(cleanTrainNumber, trainName, trainOpt);
+    }
+
+    private LiveTrainStatusDto buildTimetableFallback(String trainNumber, String trainName, Optional<Train> trainOpt) {
         return LiveTrainStatusDto.builder()
-                .trainNumber(cleanTrainNumber)
+                .trainNumber(trainNumber)
                 .trainName(trainName)
                 .currentStation(trainOpt.map(t -> t.getSourceStation().getStationName()).orElse("Origin Station"))
                 .nextStation(trainOpt.map(t -> t.getDestinationStation().getStationName()).orElse("Next Junction"))
