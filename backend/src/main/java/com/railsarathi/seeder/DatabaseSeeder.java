@@ -36,10 +36,16 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final TrainScheduleRepository scheduleRepository;
     private final CoachRepository coachRepository;
     private final SeatRepository seatRepository;
+    private final com.railsarathi.repository.UserRepository userRepository;
+    private final com.railsarathi.repository.NotificationRepository notificationRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) {
+        seedUsersIfEmpty();
+        seedNotificationsIfEmpty();
+
         if (stationRepository.count() > 0) {
             log.info("Database already seeded with railway stations and trains. Skipping seeder.");
             return;
@@ -301,11 +307,83 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
         int mod = seatNum % 8;
         return switch (mod) {
-            case 1, 4 -> BerthType.LOWER;
-            case 2, 5 -> BerthType.MIDDLE;
-            case 3, 6 -> BerthType.UPPER;
             case 7 -> BerthType.SIDE_LOWER;
             default -> BerthType.SIDE_UPPER;
         };
+    }
+
+    private void seedUsersIfEmpty() {
+        if (!userRepository.existsByEmail("aarav@railsarathi.com")) {
+            com.railsarathi.entity.User passenger = com.railsarathi.entity.User.builder()
+                    .fullName("Aarav Mehta")
+                    .username("aarav")
+                    .email("aarav@railsarathi.com")
+                    .password(passwordEncoder.encode("password123"))
+                    .phone("+919876543210")
+                    .role(com.railsarathi.enums.Role.ROLE_PASSENGER)
+                    .build();
+            userRepository.save(passenger);
+            log.info("Seeded demo passenger account: aarav@railsarathi.com");
+        }
+
+        if (!userRepository.existsByEmail("admin@railsarathi.com")) {
+            com.railsarathi.entity.User admin = com.railsarathi.entity.User.builder()
+                    .fullName("RailSarathi Admin")
+                    .username("admin")
+                    .email("admin@railsarathi.com")
+                    .password(passwordEncoder.encode("admin@2026"))
+                    .phone("+919876543211")
+                    .role(com.railsarathi.enums.Role.ROLE_ADMIN)
+                    .build();
+            userRepository.save(admin);
+            log.info("Seeded demo admin account: admin@railsarathi.com");
+        }
+    }
+
+    private void seedNotificationsIfEmpty() {
+        if (notificationRepository.count() == 0) {
+            userRepository.findByEmail("aarav@railsarathi.com").ifPresent(user -> {
+                log.info("Seeding initial notifications for passenger user [{}]...", user.getEmail());
+
+                com.railsarathi.entity.Notification n1 = com.railsarathi.entity.Notification.builder()
+                        .recipientUser(user)
+                        .recipientEmail(user.getEmail())
+                        .title("Booking Confirmed: PNR 842-1948291")
+                        .message("Your journey on 22301 Vande Bharat Express (HWH -> NJP) is confirmed for Coach C2, Seat 42.")
+                        .type(com.railsarathi.enums.NotificationType.BOOKING_CONFIRMATION)
+                        .priority(com.railsarathi.enums.NotificationPriority.HIGH)
+                        .channel(com.railsarathi.enums.NotificationChannel.IN_APP)
+                        .status(com.railsarathi.enums.NotificationStatus.UNREAD)
+                        .actionUrl("/dashboard")
+                        .build();
+
+                com.railsarathi.entity.Notification n2 = com.railsarathi.entity.Notification.builder()
+                        .recipientUser(user)
+                        .recipientEmail(user.getEmail())
+                        .title("Live Tracking Update: Train 22301")
+                        .message("TinyFish AI Live Tracker reports 22301 Vande Bharat is running on schedule approaching Bolpur.")
+                        .type(com.railsarathi.enums.NotificationType.TRAIN_DELAY)
+                        .priority(com.railsarathi.enums.NotificationPriority.NORMAL)
+                        .channel(com.railsarathi.enums.NotificationChannel.IN_APP)
+                        .status(com.railsarathi.enums.NotificationStatus.UNREAD)
+                        .actionUrl("/train/22301")
+                        .build();
+
+                com.railsarathi.entity.Notification n3 = com.railsarathi.entity.Notification.builder()
+                        .recipientUser(user)
+                        .recipientEmail(user.getEmail())
+                        .title("Welcome to RailSarathi")
+                        .message("Explore authentic Indian Railways schedules, multi-stop search, and instant boarding passes.")
+                        .type(com.railsarathi.enums.NotificationType.SYSTEM_ANNOUNCEMENT)
+                        .priority(com.railsarathi.enums.NotificationPriority.LOW)
+                        .channel(com.railsarathi.enums.NotificationChannel.IN_APP)
+                        .status(com.railsarathi.enums.NotificationStatus.READ)
+                        .readAt(java.time.LocalDateTime.now())
+                        .actionUrl("/")
+                        .build();
+
+                notificationRepository.saveAll(java.util.List.of(n1, n2, n3));
+            });
+        }
     }
 }

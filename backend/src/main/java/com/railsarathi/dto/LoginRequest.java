@@ -1,12 +1,8 @@
 package com.railsarathi.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
@@ -16,6 +12,7 @@ import lombok.Setter;
 public class LoginRequest {
 
     @NotBlank(message = "Email or username is required")
+    @JsonAlias({"usernameOrEmail", "emailOrUsername", "username", "email"})
     private String emailOrUsername;
 
     @NotBlank(message = "Password is required")

@@ -53,9 +53,9 @@ public class AuthServiceImpl implements AuthService {
                 .username(request.getUsername().trim())
                 .email(request.getEmail().trim().toLowerCase())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .phone(request.getPhone().trim())
+                .phone(request.getPhone() != null ? request.getPhone().trim() : "")
                 .dateOfBirth(request.getDateOfBirth())
-                .role(Role.ROLE_PASSENGER)
+                .role(request.getRole() != null ? request.getRole() : Role.ROLE_PASSENGER)
                 .activeSessionId(sessionId)
                 .build();
 

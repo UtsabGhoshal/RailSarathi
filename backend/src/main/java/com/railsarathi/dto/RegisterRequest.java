@@ -2,6 +2,9 @@ package com.railsarathi.dto;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.railsarathi.enums.Role;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -36,9 +39,11 @@ public class RegisterRequest {
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
 
-    @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be a valid 10-digit number")
+    @JsonAlias({"phoneNumber", "phone"})
+    @Pattern(regexp = "^(\\+?91)?[0-9]{10}$|^$", message = "Phone number must be a valid 10-digit number (e.g. 9876543210 or +919876543210)")
     private String phone;
 
     private LocalDate dateOfBirth;
+
+    private Role role;
 }

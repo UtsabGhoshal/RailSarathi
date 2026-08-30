@@ -5,6 +5,19 @@ const port = Number((globalThis as { process?: { env?: { PORT?: string } } }).pr
 
 export default defineConfig({
   plugins: [react()],
-  server: { host: '0.0.0.0', port },
-  preview: { host: '0.0.0.0', port },
+  server: {
+    host: '0.0.0.0',
+    port,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+  preview: {
+    host: '0.0.0.0',
+    port,
+  },
 });

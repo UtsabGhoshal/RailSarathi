@@ -33,6 +33,12 @@ public class AuthIntegrationTests {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.railsarathi.repository.NotificationRepository notificationRepository;
+
+    @Autowired
+    private com.railsarathi.repository.PaymentTransactionRepository paymentTransactionRepository;
+
     private MockMvc mockMvc;
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
@@ -44,6 +50,8 @@ public class AuthIntegrationTests {
                 .apply(springSecurity())
                 .build();
 
+        notificationRepository.deleteAll();
+        paymentTransactionRepository.deleteAll();
         userRepository.deleteAll();
     }
 
